@@ -1,0 +1,16 @@
+[project]
+name = "codis-web-downloader"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Neil_Kuo",email = "weyltensor@gmail.com"}
+]
+requires-python = ">=3.14"
+dependencies = [
+    "streamlit (>=1.65.0,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
