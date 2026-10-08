@@ -8,9 +8,7 @@ import streamlit as st
 
 import urllib3
 
-urllib3.disable_warnings(
-    urllib3.exceptions.InsecureRequestWarning
-)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # =========================================================
 # 設定
 # =========================================================
@@ -31,13 +29,11 @@ TIMEOUT = 30
 # API：取得測站清單
 # =========================================================
 
+
 @st.cache_data(ttl=3600)
 def get_station_list():
     response = requests.get(
-        STATION_LIST_URL,
-        headers=HEADERS,
-        timeout=TIMEOUT,
-        verify=False
+        STATION_LIST_URL, headers=HEADERS, timeout=TIMEOUT, verify=False
     )
     response.raise_for_status()
     return response.json()
@@ -84,6 +80,7 @@ def build_station_mapping(data):
 # API：取得日／月／年報
 # =========================================================
 
+
 def get_report(stn_id, stn_type, report_type, date_str, start, end):
     payload = {
         "date": date_str,
@@ -97,11 +94,7 @@ def get_report(stn_id, stn_type, report_type, date_str, start, end):
     }
 
     response = requests.post(
-        REPORT_URL,
-        headers=HEADERS,
-        data=payload,
-        timeout=TIMEOUT,
-        verify=False
+        REPORT_URL, headers=HEADERS, data=payload, timeout=TIMEOUT, verify=False
     )
 
     response.raise_for_status()
@@ -110,7 +103,7 @@ def get_report(stn_id, stn_type, report_type, date_str, start, end):
 
     try:
         return result["data"][0]["dts"]
-    except (KeyError, IndexError, TypeError):
+    except KeyError, IndexError, TypeError:
         return []
 
 
@@ -123,7 +116,7 @@ def get_daily(stn_id, stn_type, date):
         "report_date",
         date_str + "T00:00:00+08:00",
         date_str + "T00:00:00",
-        date_str + "T23:59:59"
+        date_str + "T23:59:59",
     )
 
 
@@ -139,7 +132,7 @@ def get_monthly(stn_id, stn_type, year, month):
         "report_month",
         start_date + "T00:00:00+08:00",
         start_date + "T00:00:00",
-        end_date + "T00:00:00"
+        end_date + "T00:00:00",
     )
 
 
@@ -153,7 +146,7 @@ def get_yearly(stn_id, stn_type, year):
         "report_year",
         start_date + "T00:00:00+08:00",
         start_date + "T00:00:00",
-        end_date + "T00:00:00"
+        end_date + "T00:00:00",
     )
 
 
@@ -163,9 +156,7 @@ def expand_dict_columns(df):
 
     for column in df.columns:
 
-        has_dict = df[column].apply(
-            lambda x: isinstance(x, dict)
-        ).any()
+        has_dict = df[column].apply(lambda x: isinstance(x, dict)).any()
 
         if not has_dict:
             continue
@@ -179,15 +170,9 @@ def expand_dict_columns(df):
 
             for key, item in value.items():
 
-                new_column = "{}_{}".format(
-                    column,
-                    key
-                )
+                new_column = "{}_{}".format(column, key)
 
-                new_columns.setdefault(
-                    new_column,
-                    {}
-                )
+                new_columns.setdefault(new_column, {})
 
                 new_columns[new_column][index] = item
 
@@ -203,22 +188,18 @@ def expand_dict_columns(df):
 
     # 移除全部為空字串的欄位
     for column in df.columns:
-        if df[column].apply(
-            lambda x: str(x).strip() == ""
-        ).all():
+        if df[column].apply(lambda x: str(x).strip() == "").all():
             df = df.drop(columns=[column])
 
     return df
+
 
 # =========================================================
 # Streamlit
 # =========================================================
 
 
-st.set_page_config(
-    page_title="CODIS 氣象資料下載",
-    layout="wide"
-)
+st.set_page_config(page_title="CODIS 氣象資料下載", layout="wide")
 
 st.title("CODIS 氣象資料下載")
 
@@ -229,7 +210,6 @@ st.title("CODIS 氣象資料下載")
 
 try:
     station_json = get_station_list()
-    print(station_json)
     station_mapping = build_station_mapping(station_json)
 
 except Exception as e:
@@ -244,17 +224,14 @@ except Exception as e:
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    report_name = st.selectbox(
-        "報表類型",
-        ["日報", "月報", "年報"]
-    )
+    report_name = st.selectbox("報表類型", ["日報", "月報", "年報"])
 
 with col2:
     stn_input = st.text_area(
         "6碼測站 ID(可用逗號或換行輸入多個測站，例如：467650, C0I370 或每行一個測站)",
         value="467650",
         height=120,
-        help="可用逗號或換行輸入多個測站，例如：467650, C0I370 或每行一個測站"
+        help="可用逗號或換行輸入多個測站，例如：467650, C0I370 或每行一個測站",
     )
 
     # 支援逗號、換行
@@ -283,18 +260,11 @@ for stn_id in stn_ids:
         invalid_stations.append(stn_id)
 
 if invalid_stations:
-    st.warning(
-        "找不到測站：{}".format(
-            ", ".join(invalid_stations)
-        )
-    )
+    st.warning("找不到測站：{}".format(", ".join(invalid_stations)))
 
 if valid_stations:
     st.caption(
-        "已選擇 {} 個測站：{}".format(
-            len(valid_stations),
-            ", ".join(valid_stations)
-        )
+        "已選擇 {} 個測站：{}".format(len(valid_stations), ", ".join(valid_stations))
     )
 
 
@@ -307,14 +277,10 @@ if report_name == "日報":
     col1, col2 = st.columns(2)
 
     with col1:
-        start_date = st.date_input(
-            "開始日期"
-        )
+        start_date = st.date_input("開始日期")
 
     with col2:
-        end_date = st.date_input(
-            "結束日期"
-        )
+        end_date = st.date_input("結束日期")
 
 
 elif report_name == "月報":
@@ -331,7 +297,7 @@ elif report_name == "月報":
             max_value=2100,
             value=2026,
             step=1,
-            key="start_year"
+            key="start_year",
         )
 
     with col2:
@@ -339,7 +305,7 @@ elif report_name == "月報":
             "開始月份",
             range(1, 13),
             format_func=lambda x: "{} 月".format(x),
-            key="start_month"
+            key="start_month",
         )
 
     # 結束年月
@@ -354,7 +320,7 @@ elif report_name == "月報":
             max_value=2100,
             value=2026,
             step=1,
-            key="end_year"
+            key="end_year",
         )
 
     with col2:
@@ -363,7 +329,7 @@ elif report_name == "月報":
             range(1, 13),
             index=9,
             format_func=lambda x: "{} 月".format(x),
-            key="end_month"
+            key="end_month",
         )
 
 
@@ -373,20 +339,12 @@ else:
 
     with col1:
         start_year = st.number_input(
-            "開始年份",
-            min_value=1900,
-            max_value=2100,
-            value=2025,
-            step=1
+            "開始年份", min_value=1900, max_value=2100, value=2025, step=1
         )
 
     with col2:
         end_year = st.number_input(
-            "結束年份",
-            min_value=1900,
-            max_value=2100,
-            value=2026,
-            step=1
+            "結束年份", min_value=1900, max_value=2100, value=2026, step=1
         )
 
 
@@ -414,13 +372,9 @@ if st.button("開始下載"):
                 st.error("開始日期不能晚於結束日期。")
                 st.stop()
 
-            total_days = (
-                end_date - start_date
-            ).days + 1
+            total_days = (end_date - start_date).days + 1
 
-            total_tasks = (
-                len(valid_stations) * total_days
-            )
+            total_tasks = len(valid_stations) * total_days
 
             completed = 0
 
@@ -436,11 +390,7 @@ if st.button("開始下載"):
 
                 while current <= end_date:
 
-                    data = get_daily(
-                        stn_id,
-                        stn_type,
-                        current
-                    )
+                    data = get_daily(stn_id, stn_type, current)
                     time.sleep(random.uniform(0.5, 1.0))
 
                     for row in data:
@@ -451,18 +401,9 @@ if st.button("開始下載"):
 
                     completed += 1
 
-                    progress.progress(
-                        int(
-                            completed
-                            / total_tasks
-                            * 100
-                        )
-                    )
+                    progress.progress(int(completed / total_tasks * 100))
 
-                    current = (
-                        current
-                        + pd.Timedelta(days=1)
-                    )
+                    current = current + pd.Timedelta(days=1)
 
             progress.empty()
 
@@ -472,15 +413,9 @@ if st.button("開始下載"):
 
         elif report_name == "月報":
 
-            start_key = (
-                int(start_year) * 100
-                + int(start_month)
-            )
+            start_key = int(start_year) * 100 + int(start_month)
 
-            end_key = (
-                int(end_year) * 100
-                + int(end_month)
-            )
+            end_key = int(end_year) * 100 + int(end_month)
 
             if start_key > end_key:
                 st.error("開始月份不能晚於結束月份。")
@@ -493,9 +428,7 @@ if st.button("開始下載"):
 
             while year * 100 + month <= end_key:
 
-                months.append(
-                    (year, month)
-                )
+                months.append((year, month))
 
                 month += 1
 
@@ -503,10 +436,7 @@ if st.button("開始下載"):
                     month = 1
                     year += 1
 
-            total_tasks = (
-                len(valid_stations)
-                * len(months)
-            )
+            total_tasks = len(valid_stations) * len(months)
 
             completed = 0
 
@@ -520,12 +450,7 @@ if st.button("開始下載"):
 
                 for year, month in months:
 
-                    data = get_monthly(
-                        stn_id,
-                        stn_type,
-                        year,
-                        month
-                    )
+                    data = get_monthly(stn_id, stn_type, year, month)
                     time.sleep(random.uniform(0.5, 1.0))
 
                     for row in data:
@@ -536,13 +461,7 @@ if st.button("開始下載"):
 
                     completed += 1
 
-                    progress.progress(
-                        int(
-                            completed
-                            / total_tasks
-                            * 100
-                        )
-                    )
+                    progress.progress(int(completed / total_tasks * 100))
 
             progress.empty()
 
@@ -556,17 +475,9 @@ if st.button("開始下載"):
                 st.error("開始年份不能晚於結束年份。")
                 st.stop()
 
-            years = list(
-                range(
-                    int(start_year),
-                    int(end_year) + 1
-                )
-            )
+            years = list(range(int(start_year), int(end_year) + 1))
 
-            total_tasks = (
-                len(valid_stations)
-                * len(years)
-            )
+            total_tasks = len(valid_stations) * len(years)
 
             completed = 0
 
@@ -580,11 +491,7 @@ if st.button("開始下載"):
 
                 for year in years:
 
-                    data = get_yearly(
-                        stn_id,
-                        stn_type,
-                        year
-                    )
+                    data = get_yearly(stn_id, stn_type, year)
                     time.sleep(random.uniform(0.5, 1.0))
 
                     for row in data:
@@ -595,13 +502,7 @@ if st.button("開始下載"):
 
                     completed += 1
 
-                    progress.progress(
-                        int(
-                            completed
-                            / total_tasks
-                            * 100
-                        )
-                    )
+                    progress.progress(int(completed / total_tasks * 100))
 
             progress.empty()
 
@@ -615,14 +516,9 @@ if st.button("開始下載"):
 
         df = pd.DataFrame(results)
         df = expand_dict_columns(df)
-        st.success(
-            "下載完成，共 {} 筆資料。".format(len(df))
-        )
+        st.success("下載完成，共 {} 筆資料。".format(len(df)))
 
-        st.dataframe(
-            df,
-            use_container_width=True
-        )
+        st.dataframe(df, use_container_width=True)
 
         # =================================================
         # CSV
@@ -630,32 +526,21 @@ if st.button("開始下載"):
 
         csv_buffer = io.StringIO()
 
-        df.to_csv(
-            csv_buffer,
-            index=False
-        )
+        df.to_csv(csv_buffer, index=False)
 
-        filename = "{}_{}_{}.csv".format(
-            stn_id,
-            report_name,
-            len(df)
-        )
+        filename = "{}_{}_{}.csv".format(stn_id, report_name, len(df))
 
         st.download_button(
             label="下載 CSV",
             data=csv_buffer.getvalue().encode("utf-8-sig"),
             file_name=filename,
-            mime="text/csv"
+            mime="text/csv",
         )
 
     except requests.RequestException as e:
 
-        st.error(
-            "CODIS API 連線失敗：{}".format(e)
-        )
+        st.error("CODIS API 連線失敗：{}".format(e))
 
     except Exception as e:
 
-        st.error(
-            "處理資料時發生錯誤：{}".format(e)
-        )
+        st.error("處理資料時發生錯誤：{}".format(e))
