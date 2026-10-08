@@ -248,29 +248,52 @@ with col1:
     )
 
 with col2:
-    stn_id = st.text_input(
-        "測站 ID",
-        value="467650"
-    ).strip()
+    stn_input = st.text_area(
+        "6碼測站 ID(可用逗號或換行輸入多個測站，例如：467650, C0I370 或每行一個測站)",
+        value="467650",
+        height=120,
+        help="可用逗號或換行輸入多個測站，例如：467650, C0I370 或每行一個測站"
+    )
+
+    # 支援逗號、換行
+    stn_ids = []
+
+    for line in stn_input.replace(",", "\n").splitlines():
+        stn_id = line.strip()
+
+        if stn_id and stn_id not in stn_ids:
+            stn_ids.append(stn_id)
 
 
 # =========================================================
-# 測站資訊
+# 輸入之測站資訊
 # =========================================================
 
-station_info = station_mapping.get(stn_id)
+# 檢查測站
+valid_stations = []
+invalid_stations = []
 
-if station_info:
-    st.caption(
-        "測站：{}　｜　類型：{}　｜　緯度：{}　｜　經度：{}".format(
-            station_info["station_name"],
-            station_info["stn_type"],
-            station_info["latitude"],
-            station_info["longitude"]
+for stn_id in stn_ids:
+
+    if stn_id in station_mapping:
+        valid_stations.append(stn_id)
+    else:
+        invalid_stations.append(stn_id)
+
+if invalid_stations:
+    st.warning(
+        "找不到測站：{}".format(
+            ", ".join(invalid_stations)
         )
     )
-else:
-    st.warning("找不到測站 ID：{}".format(stn_id))
+
+if valid_stations:
+    st.caption(
+        "已選擇 {} 個測站：{}".format(
+            len(valid_stations),
+            ", ".join(valid_stations)
+        )
+    )
 
 
 # =========================================================
@@ -371,11 +394,10 @@ else:
 
 if st.button("開始下載"):
 
-    if not station_info:
-        st.error("請輸入正確的測站 ID。")
+    if not valid_stations:
+        st.error("沒有有效的測站 ID。")
         st.stop()
 
-    stn_type = station_info["stn_type"]
     results = []
 
     try:
@@ -390,26 +412,54 @@ if st.button("開始下載"):
                 st.error("開始日期不能晚於結束日期。")
                 st.stop()
 
-            current = start_date
-            total_days = (end_date - start_date).days + 1
+            total_days = (
+                end_date - start_date
+            ).days + 1
+
+            total_tasks = (
+                len(valid_stations) * total_days
+            )
+
+            completed = 0
 
             progress = st.progress(0)
 
-            for i in range(total_days):
+            for stn_id in valid_stations:
 
-                data = get_daily(
-                    stn_id,
-                    stn_type,
-                    current
-                )
+                station_info = station_mapping[stn_id]
+                stn_type = station_info["stn_type"]
+                station_name = station_info["station_name"]
 
-                results.extend(data)
+                current = start_date
 
-                progress.progress(
-                    int((i + 1) / total_days * 100)
-                )
+                while current <= end_date:
 
-                current = current + pd.Timedelta(days=1)
+                    data = get_daily(
+                        stn_id,
+                        stn_type,
+                        current
+                    )
+
+                    for row in data:
+                        row["stn_id"] = stn_id
+                        row["station_name"] = station_name
+
+                    results.extend(data)
+
+                    completed += 1
+
+                    progress.progress(
+                        int(
+                            completed
+                            / total_tasks
+                            * 100
+                        )
+                    )
+
+                    current = (
+                        current
+                        + pd.Timedelta(days=1)
+                    )
 
             progress.empty()
 
@@ -419,8 +469,15 @@ if st.button("開始下載"):
 
         elif report_name == "月報":
 
-            start_key = int(start_year) * 100 + int(start_month)
-            end_key = int(end_year) * 100 + int(end_month)
+            start_key = (
+                int(start_year) * 100
+                + int(start_month)
+            )
+
+            end_key = (
+                int(end_year) * 100
+                + int(end_month)
+            )
 
             if start_key > end_key:
                 st.error("開始月份不能晚於結束月份。")
@@ -433,7 +490,9 @@ if st.button("開始下載"):
 
             while year * 100 + month <= end_key:
 
-                months.append((year, month))
+                months.append(
+                    (year, month)
+                )
 
                 month += 1
 
@@ -441,22 +500,45 @@ if st.button("開始下載"):
                     month = 1
                     year += 1
 
+            total_tasks = (
+                len(valid_stations)
+                * len(months)
+            )
+
+            completed = 0
+
             progress = st.progress(0)
 
-            for i, item in enumerate(months):
+            for stn_id in valid_stations:
 
-                data = get_monthly(
-                    stn_id,
-                    stn_type,
-                    item[0],
-                    item[1]
-                )
+                station_info = station_mapping[stn_id]
+                stn_type = station_info["stn_type"]
+                station_name = station_info["station_name"]
 
-                results.extend(data)
+                for year, month in months:
 
-                progress.progress(
-                    int((i + 1) / len(months) * 100)
-                )
+                    data = get_monthly(
+                        stn_id,
+                        stn_type,
+                        year,
+                        month
+                    )
+
+                    for row in data:
+                        row["stn_id"] = stn_id
+                        row["station_name"] = station_name
+
+                    results.extend(data)
+
+                    completed += 1
+
+                    progress.progress(
+                        int(
+                            completed
+                            / total_tasks
+                            * 100
+                        )
+                    )
 
             progress.empty()
 
@@ -470,28 +552,51 @@ if st.button("開始下載"):
                 st.error("開始年份不能晚於結束年份。")
                 st.stop()
 
-            years = range(
-                int(start_year),
-                int(end_year) + 1
+            years = list(
+                range(
+                    int(start_year),
+                    int(end_year) + 1
+                )
             )
 
-            years = list(years)
+            total_tasks = (
+                len(valid_stations)
+                * len(years)
+            )
+
+            completed = 0
 
             progress = st.progress(0)
 
-            for i, year in enumerate(years):
+            for stn_id in valid_stations:
 
-                data = get_yearly(
-                    stn_id,
-                    stn_type,
-                    year
-                )
+                station_info = station_mapping[stn_id]
+                stn_type = station_info["stn_type"]
+                station_name = station_info["station_name"]
 
-                results.extend(data)
+                for year in years:
 
-                progress.progress(
-                    int((i + 1) / len(years) * 100)
-                )
+                    data = get_yearly(
+                        stn_id,
+                        stn_type,
+                        year
+                    )
+
+                    for row in data:
+                        row["stn_id"] = stn_id
+                        row["station_name"] = station_name
+
+                    results.extend(data)
+
+                    completed += 1
+
+                    progress.progress(
+                        int(
+                            completed
+                            / total_tasks
+                            * 100
+                        )
+                    )
 
             progress.empty()
 
