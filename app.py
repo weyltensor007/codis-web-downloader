@@ -1,7 +1,9 @@
+import pandas as pd
+import time
 import io
 import calendar
 import requests
-import pandas as pd
+import random
 import streamlit as st
 
 import urllib3
@@ -439,6 +441,7 @@ if st.button("開始下載"):
                         stn_type,
                         current
                     )
+                    time.sleep(random.uniform(0.5, 1.0))
 
                     for row in data:
                         row["stn_id"] = stn_id
@@ -523,6 +526,7 @@ if st.button("開始下載"):
                         year,
                         month
                     )
+                    time.sleep(random.uniform(0.5, 1.0))
 
                     for row in data:
                         row["stn_id"] = stn_id
@@ -581,6 +585,7 @@ if st.button("開始下載"):
                         stn_type,
                         year
                     )
+                    time.sleep(random.uniform(0.5, 1.0))
 
                     for row in data:
                         row["stn_id"] = stn_id
